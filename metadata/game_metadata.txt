@@ -1,10 +1,10 @@
 # Remove the pound sign and leading space for the properties below before publishing your game.
-# devid=myname
-# devtitle=My Name
-# gameid=mygame
-# gametitle=My Game
-# version=0.1
-# icon=metadata/icon.png
+devid=amignosis
+devtitle=Petros Amoiridis
+gameid=hea
+gametitle=Henrietta's Eggstravagant Adventures
+version=0.1
+icon=metadata/icon.png
 
 # === Flags available at all licensing tiers ===
 
