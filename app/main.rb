@@ -1,9 +1,66 @@
 FPS = 60
 HIGH_SCORE_FILE = "high-score.txt"
 
+# Utils
 # Pick a random number between from and to, inclusive
-def rand_from_range(from, to)
+def utils_rand_from_range(from, to)
   rand((to - from) + 1) + from
+end
+
+# Eggs
+def eggs_initialize(args)
+  args.state.eggs ||= [egg_spawn(args), egg_spawn(args), egg_spawn(args)]
+  #args.state.eggs.each { |egg| egg_animate(egg) }
+end
+
+def egg_spawn(args)
+  args.state.egg_size ||= 32
+  {
+    x: 0,
+    y: args.grid.h,
+    w: args.state.egg_size,
+    h: args.state.egg_size,
+    path: 'sprites/egg/egg-0.png',
+    vx: utils_rand_from_range(3, 8),
+    vy: -utils_rand_from_range(5, 10),
+    gravity: utils_rand_from_range(0.15, 0.25),
+    elasticity: 0.8,
+    captured: false
+  }
+end
+
+def egg_animate(egg)
+  index = 0.frame_index(count: 1, hold_for: 3, repeat: true)
+  egg.path = "sprites/egg/egg-#{index}.png"
+end
+
+def eggs_move(args)
+  args.state.eggs.each do |egg|
+    # Update position based on velocity
+    egg[:x] += egg[:vx]
+    egg[:y] += egg[:vy]
+
+    # apply gravity to vertical velocity
+    egg[:vy] -= egg[:gravity];
+
+    if egg[:x] <= 0
+      egg[:x] = 0
+      egg[:vx] *= -egg[:elasticity]
+      egg[:vy] *= [-1, 1].sample
+    end
+
+    if egg[:x] >= args.grid.w - args.state.egg_size
+      egg[:x] = args.grid.w - args.state.egg_size
+      egg[:vx] *= -egg[:elasticity]
+      egg[:vy] *= [-1, 1].sample
+    end
+
+    if egg[:y] <= 0
+      egg[:y] = 0 # Prevent it from going below the ground
+      egg[:vy] *= -egg[:elasticity] # Reverse direction and apply elasticity
+      egg[:vx] *= [-1, 1].sample
+    end
+  end
 end
 
 def start_music(args)
@@ -107,25 +164,12 @@ def move_player(args)
       args.state.player.facing = :right
     end
   end
-  # if args.inputs.up
-  #   args.state.player.y += args.state.player.speed
-  #   moved = true
-  # elsif args.inputs.down
-  #   args.state.player.y -= args.state.player.speed
-  #   moved = true
-  # end
   if args.state.player.x + args.state.player.w > args.grid.w
     args.state.player.x = args.grid.w - args.state.player.w
   end
   if args.state.player.x < 0
     args.state.player.x = 0
   end
-  # if args.state.player.y + args.state.player.h > args.grid.h
-  #   args.state.player.y = args.grid.h - args.state.player.h
-  # end
-  # if args.state.player.y < 0
-  #   args.state.player.y = 0
-  # end
   if moved
     args.state.player.moved = moved
   end
@@ -137,13 +181,14 @@ def animate_player(args, speed)
 end
 
 def update_sprites(args)
+  args.state.eggs.reject! { |egg| egg.captured }
   if args.state.player.moved
     animate_player(args, 1)
     args.state.player.moved = false
   else
     animate_player(args, 3)
   end
-  args.outputs.sprites << [args.state.player]
+  args.outputs.sprites << [args.state.player, args.state.eggs]
 end
 
 def update_labels(args)
@@ -164,8 +209,21 @@ def update_labels(args)
   args.outputs.labels << labels
 end
 
+def detect_collision(args)
+  args.state.eggs.each do |egg|
+    if args.geometry.intersect_rect?(egg, args.state.player, 5)
+      args.audio[:target] = {input: "sounds/chicken.wav", looping: false }
+      egg.captured = true
+      args.state.score += 1
+      args.state.eggs << egg_spawn(args)
+    end
+  end
+end
+
 def game_scene(args)
+  args.audio[:music][:gain] = 0.2
   initialize_player(args)
+  eggs_initialize(args)
   args.state.score ||= 0
   args.state.lives ||= 3
   draw_background(args)
@@ -176,6 +234,13 @@ def game_scene(args)
     return
   end
   move_player(args)
+  eggs_move(args)
+  if args.inputs.keyboard.key_down.escape
+    args.state.scene = "title"
+    $gtk.reset
+    return
+  end
+  detect_collision(args)
   update_sprites(args)
   update_labels(args)
 end
