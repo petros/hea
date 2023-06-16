@@ -137,7 +137,7 @@ def draw_background(args)
     y: 0,
     w: args.grid.w,
     h: args.grid.h,
-    path: 'sprites/hea-game-scene-background.png'
+    path: 'sprites/hea-background.png'
   }
 end
 
@@ -153,6 +153,10 @@ def player_initialize(args)
     speed: 12,
     facing: :left,
   }
+end
+
+def player_cluck(args)
+  args.audio[:target] = {input: "sounds/chicken.wav", looping: false, gain: 2.0}
 end
 
 def player_move(args)
@@ -221,7 +225,7 @@ end
 def detect_collision(args)
   args.state.eggs.each do |egg|
     if args.geometry.intersect_rect?(egg, args.state.player, 5)
-      args.audio[:target] = {input: "sounds/chicken.wav", looping: false }
+      player_cluck(args)
       egg.captured = true
       args.state.score += 1
       args.state.eggs << eggs_spawn(args)
