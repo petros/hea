@@ -1,6 +1,6 @@
 FPS = 60
 HIGH_SCORE_FILE = "high-score.txt"
-EGG_BREAKS_AT = 3
+EGG_BREAKS_AT = 4
 
 # Utils
 #######
