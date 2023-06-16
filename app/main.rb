@@ -64,11 +64,17 @@ def eggs_move(args)
     end
 
     if egg[:y] <= 0
+      eggs_crack(args, egg)
       egg[:y] = 0 # Prevent it from going below the ground
       egg[:vy] *= -egg[:elasticity] # Reverse direction and apply elasticity
       egg[:vx] *= [-1, 1].sample
     end
   end
+end
+
+def eggs_crack(args, egg)
+  args.audio[:eggs_crack] = { input: "sounds/eggs-crack.wav", looping: false }
+  #egg[:path] = "sprites/egg/egg-cracked.png"
 end
 
 def eggs_clear(args)
