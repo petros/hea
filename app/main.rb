@@ -1,5 +1,6 @@
 FPS = 60
 HIGH_SCORE_FILE = "high-score.txt"
+EGG_BREAKS_AT = 5
 
 # Utils
 #######
@@ -18,7 +19,6 @@ end
 #
 def eggs_initialize(args)
   args.state.eggs ||= [eggs_spawn(args), eggs_spawn(args), eggs_spawn(args)]
-  #args.state.eggs.each { |egg| egg_animate(egg) }
 end
 
 def eggs_spawn(args)
@@ -33,13 +33,9 @@ def eggs_spawn(args)
     vy: -utils_rand_from_range(5, 10),
     gravity: utils_rand_from_range(0.15, 0.25),
     elasticity: 0.8,
-    captured: false
+    captured: false,
+    times_it_hit_the_ground: 0,
   }
-end
-
-def eggs_animate(egg)
-  index = 0.frame_index(count: 1, hold_for: 3, repeat: true)
-  egg.path = "sprites/egg/egg-#{index}.png"
 end
 
 def eggs_move(args)
@@ -64,6 +60,7 @@ def eggs_move(args)
     end
 
     if egg[:y] <= 0
+      eggs_crack(args, egg)
       egg[:y] = 0 # Prevent it from going below the ground
       egg[:vy] *= -egg[:elasticity] # Reverse direction and apply elasticity
       egg[:vx] *= [-1, 1].sample
@@ -71,8 +68,18 @@ def eggs_move(args)
   end
 end
 
+def eggs_crack(args, egg)
+  args.audio[:eggs_crack] = { input: "sounds/eggs-crack.wav", looping: false }
+  egg[:times_it_hit_the_ground] += 1
+  if egg[:times_it_hit_the_ground] == EGG_BREAKS_AT
+    args.state.eggs << eggs_spawn(args)
+    lives_burn(args)
+  end
+  egg[:path] = "sprites/egg/egg-#{egg[:times_it_hit_the_ground]}.png"
+end
+
 def eggs_clear(args)
-  args.state.eggs.reject! { |egg| egg.captured }
+  args.state.eggs.reject! { |egg| egg.captured || egg.times_it_hit_the_ground == EGG_BREAKS_AT }
 end
 
 # Music
@@ -96,7 +103,7 @@ def title_scene(args)
     path: 'sprites/hea-title-scene.png'
   }
   if player_fired?(args)
-    args.audio[:game_over] = { input: "sounds/game-over.wav", looping: false }
+    # args.audio[:game_over] = { input: "sounds/game-over.wav", looping: false }
     args.state.scene = "game"
     return
   end
@@ -110,7 +117,7 @@ def build_centered_label(args, text, size_enum, y)
     x: x,
     y: y,
     size_enum: size_enum,
-    text: "Hit fire to play",
+    text: text,
     r: 10,
     g: 10,
     b: 100,
@@ -156,7 +163,7 @@ def player_initialize(args)
 end
 
 def player_cluck(args)
-  args.audio[:target] = {input: "sounds/chicken.wav", looping: false, gain: 2.0}
+  args.audio[:target] = {input: "sounds/henrietta-captures-egg.wav", looping: false, gain: 2.0}
 end
 
 def player_move(args)
@@ -257,11 +264,12 @@ def lives_spawn(args, offset)
 end
 
 def lives_clear(args)
-  args.state.lives.reject! { |live| live.burned }
+  args.state.lives.reject! { |life| life.burned }
 end
 
 def lives_burn(args)
-  args.state.lives.last.burned = true
+  args.state.lives.last[:burned] = true unless args.state.lives.empty?
+  args.audio[:henrietta_loses_life] = {input: "sounds/henrietta-loses-life.wav", looping: false, gain: 2.0}
 end
 
 # Game scene
@@ -293,50 +301,30 @@ def game_scene(args)
 end
 
 def game_over_scene(args)
-  args.state.timer -= 1
-
+  args.outputs.sprites << {
+    x: 0,
+    y: 0,
+    w: args.grid.w,
+    h: args.grid.h,
+    path: 'sprites/hea-game-over-scene-background.png'
+  }
   if !args.state.saved_high_score && args.state.score > args.state.high_score
     args.gtk.write_file(HIGH_SCORE_FILE, args.state.score.to_s)
     args.state.saved_high_score = true
   end
-
-  labels = []
-  labels << {
-    x: 40,
-    y: args.grid.h - 40,
-    text: "Game Over!",
-    size_enum: 10,
-  }
-  labels << {
-    x: 40,
-    y: args.grid.h - 90,
-    text: "Score: #{args.state.score}",
-    size_enum: 4,
-  }
-  labels << {
-    x: 40,
-    y: args.grid.h - 132,
-    text: "Fire to restart",
-    size_enum: 2,
-  }
+  args.outputs.labels << []
+  args.outputs.labels << build_centered_label(args, "Game Over!", 10, 700)
+  args.outputs.labels << build_centered_label(args, "Score: #{args.state.score}", 10, 600)
   if args.state.score > args.state.high_score
-    labels << {
-      x: 260,
-      y: args.grid.h - 90,
-      text: "New High Score!",
-      size_enum: 3,
-    }
+    args.outputs.labels << build_centered_label(args, "New High Score!", 10, 500)
   else
-    labels << {
-      x: 260,
-      y: args.grid.h - 90,
-      text: "Score to beat: #{args.state.high_score}",
-      size_enum: 3,
-    }
+    args.outputs.labels << build_centered_label(args, "Score to beat: #{args.state.high_score}", 10, 500)
   end
-  args.outputs.labels << labels
-  if args.state.timer < -30 && player_fired?(args)
+  args.outputs.labels << build_centered_label(args, "Fire to restart", 10, 400)
+  if player_fired?(args)
+    args.state.scene = "game"
     $gtk.reset
+    return
   end
 end
 
