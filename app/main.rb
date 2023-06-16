@@ -311,7 +311,7 @@ def game_over_scene(args)
     y: 0,
     w: args.grid.w,
     h: args.grid.h,
-    path: 'sprites/hea-game-over-background.png'
+    path: 'sprites/hea-game-over-scene-background.png'
   }
   if !args.state.saved_high_score && args.state.score > args.state.high_score
     args.gtk.write_file(HIGH_SCORE_FILE, args.state.score.to_s)
