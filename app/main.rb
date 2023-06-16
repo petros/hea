@@ -169,7 +169,7 @@ def player_initialize(args)
 end
 
 def player_cluck(args)
-  args.audio[:target] = {input: "sounds/chicken.wav", looping: false, gain: 2.0}
+  args.audio[:target] = {input: "sounds/henrietta-captures-egg.wav", looping: false, gain: 2.0}
 end
 
 def player_move(args)
