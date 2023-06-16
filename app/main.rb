@@ -123,7 +123,7 @@ def build_centered_label(args, text, size_enum, y)
     x: x,
     y: y,
     size_enum: size_enum,
-    text: "Hit fire to play",
+    text: text,
     r: 10,
     g: 10,
     b: 100,
@@ -317,12 +317,13 @@ def game_over_scene(args)
     args.gtk.write_file(HIGH_SCORE_FILE, args.state.score.to_s)
     args.state.saved_high_score = true
   end
+  args.outputs.labels << []
   args.outputs.labels << build_centered_label(args, "Game Over!", 10, 700)
   args.outputs.labels << build_centered_label(args, "Score: #{args.state.score}", 10, 600)
   if args.state.score > args.state.high_score
-    args.state.labels << build_centered_label(args, "New High Score!", 10, 500)
+    args.outputs.labels << build_centered_label(args, "New High Score!", 10, 500)
   else
-    args.state.labels << build_centered_label(args, "Score to beat: #{args.state.high_score}", 10, 500)
+    args.outputs.labels << build_centered_label(args, "Score to beat: #{args.state.high_score}", 10, 500)
   end
   args.outputs.labels << build_centered_label(args, "Fire to restart", 10, 400)
   if player_fired?(args)
