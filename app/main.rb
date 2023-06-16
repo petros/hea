@@ -275,6 +275,7 @@ end
 
 def lives_burn(args)
   args.state.lives.last[:burned] = true unless args.state.lives.empty?
+  args.audio[:henrietta_loses_life] = {input: "sounds/henrietta-loses-life.wav", looping: false, gain: 2.0}
 end
 
 # Game scene
