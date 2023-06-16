@@ -1,6 +1,6 @@
 FPS = 60
 HIGH_SCORE_FILE = "high-score.txt"
-EGG_BREAKS_AT = 4
+EGG_BREAKS_AT = 5
 
 # Utils
 #######
@@ -19,7 +19,6 @@ end
 #
 def eggs_initialize(args)
   args.state.eggs ||= [eggs_spawn(args), eggs_spawn(args), eggs_spawn(args)]
-  #args.state.eggs.each { |egg| egg_animate(egg) }
 end
 
 def eggs_spawn(args)
@@ -37,11 +36,6 @@ def eggs_spawn(args)
     captured: false,
     times_it_hit_the_ground: 0,
   }
-end
-
-def eggs_animate(egg)
-  index = 0.frame_index(count: 1, hold_for: 3, repeat: true)
-  egg.path = "sprites/egg/egg-#{index}.png"
 end
 
 def eggs_move(args)
@@ -81,7 +75,7 @@ def eggs_crack(args, egg)
     args.state.eggs << eggs_spawn(args)
     lives_burn(args)
   end
-  # egg[:path] = "sprites/egg/egg-#{egg[:times_it_hit_the_ground]}.png"
+  egg[:path] = "sprites/egg/egg-#{egg[:times_it_hit_the_ground]}.png"
 end
 
 def eggs_clear(args)
