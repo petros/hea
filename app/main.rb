@@ -1,5 +1,6 @@
 FPS = 60
 HIGH_SCORE_FILE = "high-score.txt"
+EGG_BREAKS_AT = 3
 
 # Utils
 #######
@@ -33,7 +34,8 @@ def eggs_spawn(args)
     vy: -utils_rand_from_range(5, 10),
     gravity: utils_rand_from_range(0.15, 0.25),
     elasticity: 0.8,
-    captured: false
+    captured: false,
+    times_it_hit_the_ground: 0,
   }
 end
 
@@ -74,11 +76,15 @@ end
 
 def eggs_crack(args, egg)
   args.audio[:eggs_crack] = { input: "sounds/eggs-crack.wav", looping: false }
-  #egg[:path] = "sprites/egg/egg-cracked.png"
+  egg[:times_it_hit_the_ground] += 1
+  if egg[:times_it_hit_the_ground] == EGG_BREAKS_AT
+    args.state.eggs << eggs_spawn(args)
+  end
+  # egg[:path] = "sprites/egg/egg-#{egg[:times_it_hit_the_ground]}.png"
 end
 
 def eggs_clear(args)
-  args.state.eggs.reject! { |egg| egg.captured }
+  args.state.eggs.reject! { |egg| egg.captured || egg.times_it_hit_the_ground == EGG_BREAKS_AT }
 end
 
 # Music
